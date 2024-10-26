@@ -27,23 +27,31 @@ const levenshteinDistance = (a, b) => {
   return matrix[b.length][a.length];
 };
 
-// Function to calculate similarity percentage
-const calculateAccuracy = (recognizedWord, targetWord) => {
+// Function to calculate similarity percentage with confidence
+const calculateAccuracyWithConfidence = (
+  recognizedWord,
+  targetWord,
+  confidence
+) => {
   const distance = levenshteinDistance(recognizedWord, targetWord);
   const maxLength = Math.max(recognizedWord.length, targetWord.length);
-  return ((maxLength - distance) / maxLength) * 100;
+  const accuracy = ((maxLength - distance) / maxLength) * 100;
+
+  // Adjust the accuracy based on the confidence score
+  return accuracy * confidence;
 };
 
 let recognitionInstance = null;
+let isRecognitionActive = true;
+let recognitionTimeout = null;
 
-let isRecognitionActive = true; // Global flag to track if recognition is active
-
-// Function to handle speech recognition
+// Speech recognition handler
 export const handleRecognition = (
   wordList,
   setCurrentWordIndex,
   updateResult,
-  handleRecognitionComplete
+  handleRecognitionComplete,
+  setPronunciationAccuracy
 ) => {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -57,47 +65,52 @@ export const handleRecognition = (
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  recognitionInstance = recognition; // Store recognition instance for global access
+  recognitionInstance = recognition;
   let currentWordIndex = 0;
   let hasResult = false;
-  const results = []; // Store results for overall accuracy
+  const results = [];
 
   const handleResult = (event) => {
     hasResult = true;
     const transcript = event.results[0][0].transcript.toLowerCase();
     const targetWord = wordList[currentWordIndex].toLowerCase();
+    const confidence = event.results[0][0].confidence;
 
-    const accuracy = calculateAccuracy(transcript, targetWord);
+    const accuracy = calculateAccuracyWithConfidence(
+      transcript,
+      targetWord,
+      confidence
+    );
     const isPronunciationCorrect = accuracy >= 80;
 
-    // Store result for overall accuracy
     results[currentWordIndex] = isPronunciationCorrect;
-
-    // Update the result in the frontend
     updateResult(currentWordIndex, isPronunciationCorrect);
+
+    setPronunciationAccuracy(accuracy);
 
     console.log(`Recognized Text: ${transcript}`);
     console.log(`Target Word: ${targetWord}`);
     console.log(`Accuracy: ${accuracy}%`);
+    console.log(`Confidence: ${confidence}`);
     console.log(`Pronunciation Correct: ${isPronunciationCorrect}`);
   };
 
   const startRecognitionForCurrentWord = () => {
-    if (currentWordIndex >= wordList.length) {
-      console.log("All words have been processed.");
-      const correctCount = results.filter(Boolean).length;
-      const overallAccuracy = (correctCount / wordList.length) * 100;
+    if (!isRecognitionActive) {
+      console.log("Recognition has been stopped.");
+      return;
+    }
 
-      console.log(`Overall Pronunciation Accuracy: ${overallAccuracy}%`);
+    if (currentWordIndex >= wordList.length) {
+      const correctCount = results.filter(Boolean).length;
+      const overallAccuracy = (correctCount / wordList.length) * 99;
       handleRecognitionComplete(overallAccuracy);
-      setCurrentWordIndex(-1); // Reset index when done
+      setCurrentWordIndex(-1);
       return;
     }
 
     const targetWord = wordList[currentWordIndex];
     hasResult = false;
-
-    // Update the current word index in the frontend
     setCurrentWordIndex(currentWordIndex);
 
     recognition.onstart = () => {
@@ -109,36 +122,37 @@ export const handleRecognition = (
     };
 
     recognition.onend = () => {
+      if (!isRecognitionActive) {
+        console.log("Recognition stopped, exiting onend loop.");
+        return;
+      }
       if (hasResult) {
-        console.log(`Pronunciation for ${targetWord} ended.`);
-        currentWordIndex++; // Only increment here if a result was received
+        currentWordIndex++;
       } else {
         console.warn(`No result received for word: ${targetWord}. Retrying...`);
-        // No increment; retry the same word
       }
-      // Start recognition for the next word or retry
-      setTimeout(startRecognitionForCurrentWord, 1000);
+      recognitionTimeout = setTimeout(startRecognitionForCurrentWord, 1000);
     };
 
     recognition.onerror = (event) => {
       console.error(`Error occurred during recognition: ${event.error}`);
-      currentWordIndex++; // Move to the next word on error
-      // Start recognition for the next word
-      setTimeout(startRecognitionForCurrentWord, 1000);
+      currentWordIndex++;
+      recognitionTimeout = setTimeout(startRecognitionForCurrentWord, 1000);
     };
 
     recognition.start();
   };
 
-  isRecognitionActive = true; // Set recognition as active
-  startRecognitionForCurrentWord(); // Start recognition for the first word
+  isRecognitionActive = true;
+  startRecognitionForCurrentWord();
 };
 
 // Function to stop the recognition
 export const stopRecognition = () => {
   if (recognitionInstance) {
-    recognitionInstance.stop(); // Stop the recognition instance
+    isRecognitionActive = false;
+    clearTimeout(recognitionTimeout);
+    recognitionInstance.stop();
     console.log("Recognition forcefully stopped.");
-    isRecognitionActive = false; // Set recognition flag to false
   }
 };

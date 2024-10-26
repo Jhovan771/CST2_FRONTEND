@@ -57,7 +57,7 @@ const Simple = () => {
   const playWord = (index) => {
     const wordToPlay = words[index];
     if (wordToPlay) {
-      setRandomWord(wordToPlay); 
+      setRandomWord(wordToPlay);
 
       const utterance = new SpeechSynthesisUtterance(wordToPlay);
       utterance.rate = speechRate;
@@ -101,11 +101,19 @@ const Simple = () => {
     return matrix[b.length][a.length];
   };
 
-  // Function to calculate similarity percentage
-  const calculateAccuracy = (recognizedWord, targetWord) => {
+  // Function to calculate similarity percentage with confidence score
+  const calculateAccuracyWithConfidence = (
+    recognizedWord,
+    targetWord,
+    confidence
+  ) => {
     const distance = levenshteinDistance(recognizedWord, targetWord);
     const maxLength = Math.max(recognizedWord.length, targetWord.length);
-    return ((maxLength - distance) / maxLength) * 100;
+    const accuracy = ((maxLength - distance) / maxLength) * 100;
+
+    // Incorporate the confidence score into the final accuracy
+    const weightedAccuracy = accuracy * confidence;
+    return weightedAccuracy;
   };
 
   // Handle Recognition Function
@@ -131,9 +139,15 @@ const Simple = () => {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase();
       const currentWord = randomWord.toLowerCase();
+      // Get confidence score (between 0 and 1)
+      const confidence = event.results[0][0].confidence;
 
-      const accuracy = calculateAccuracy(transcript, currentWord);
-      const isPronunciationCorrect = accuracy >= 80;
+      const accuracy = calculateAccuracyWithConfidence(
+        transcript,
+        currentWord,
+        confidence
+      );
+      const isPronunciationCorrect = accuracy >= 70;
 
       setRecognizedText(transcript);
       setIsCorrect(isPronunciationCorrect);
@@ -155,8 +169,9 @@ const Simple = () => {
       storedData.push(newEntry);
       localStorage.setItem("pronunciationData", JSON.stringify(storedData));
 
-      console.log(`Recognize Text: ${transcript}`);
+      console.log(`Recognized Text: ${transcript}`);
       console.log(`Accuracy: ${accuracy}%`);
+      console.log(`Confidence: ${confidence}`);
 
       setIsRecognizing(false);
 
@@ -443,7 +458,7 @@ const Simple = () => {
                     setWords(updatedWords);
                     localStorage.setItem("words", JSON.stringify(updatedWords));
                     setWord("");
-                    displayRandomWord(); 
+                    displayRandomWord();
                   }
                 }}>
                 <FaPlus />

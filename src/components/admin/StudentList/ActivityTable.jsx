@@ -1,7 +1,7 @@
 import { GiCardPickup } from "react-icons/gi";
 import { GiBootKick } from "react-icons/gi";
 
-const ActivityTable = ({ students, onSelectedStudent }) => {
+const ActivityTable = ({ students, onSelectedStudent, onDiscardStudent }) => {
   return (
     <div>
       <table className='min-w-full table-fixed border-collapse border border-gray-300'>
@@ -44,7 +44,7 @@ const ActivityTable = ({ students, onSelectedStudent }) => {
                   <button onClick={() => onSelectedStudent(student)}>
                     <GiCardPickup className='text-[38px] bg-green-600 text-white hover:bg-green-500 hover:text-white duration-300 p-1 rounded-md mr-1' />
                   </button>
-                  <button>
+                  <button onClick={() => onDiscardStudent(student.id)}>
                     <GiBootKick className='text-[38px] bg-red-600 text-white hover:bg-red-500 duration-300 p-1 rounded-md' />
                   </button>
                 </td>

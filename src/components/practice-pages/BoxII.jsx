@@ -29,8 +29,10 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
         label: "Pronunciation Accuracy",
         data: [],
         fill: false,
-        borderColor: "rgb(0, 0, 0)", // Line color
-        tension: 0.1,
+        borderColor: "maroon",
+        pointBorderColor: "transparent",
+        pointBorderColor: 4,
+        tension: 0.5,
       },
     ],
   });
@@ -53,13 +55,16 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
             label: "Pronunciation Accuracy",
             data: accuracyData,
             fill: false,
-            borderColor: "rgb(0, 0, 0)", // Line color
-            tension: 0.1,
+            borderColor: "maroon",
+            pointBorderColor: "transparent",
+            pointBorderColor: 4,
+            tension: 0.5,
           },
         ],
       });
     } else {
-      console.log("No data to display."); // Debugging line
+      // Debugging line
+      console.log("No data to display.");
     }
   };
 
@@ -95,7 +100,7 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
       legend: {
         position: "top",
         labels: {
-          color: "black", // Set label text color to black
+          color: "black",
         },
       },
       tooltip: {
@@ -116,20 +121,20 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
         title: {
           display: true,
           text: "Attempts",
-          color: "black", // Set axis title color to black
+          color: "black",
         },
         ticks: {
-          color: "black", // Set x-axis labels color to black
+          color: "black",
         },
       },
       y: {
         title: {
           display: true,
           text: "Accuracy (%)",
-          color: "black", // Set y-axis title color to black
+          color: "black",
         },
         ticks: {
-          color: "black", // Set y-axis labels color to black
+          color: "black",
         },
         beginAtZero: true,
         max: 100,

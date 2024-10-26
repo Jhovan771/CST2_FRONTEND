@@ -11,6 +11,10 @@ import {
 import ActivityTable from "./ActivityTable";
 import { fetchStudentsWithoutScore } from "./functions/studentService";
 import { IoMicCircle } from "react-icons/io5";
+import { submitScore } from "./functions/submitScore";
+import { discardStudent } from "./functions/discardStudent";
+import { GiArrowScope } from "react-icons/gi";
+import { speakWord } from "./functions/speechSynthesis";
 
 const Activity = () => {
   const location = useLocation();
@@ -27,6 +31,7 @@ const Activity = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [pronunciationAccuracy, setPronunciationAccuracy] = useState(null);
 
   // FETCH STUDENTS WITHOUT SCORES
   useEffect(() => {
@@ -58,9 +63,12 @@ const Activity = () => {
   };
 
   const handleRecognitionComplete = (overallAccuracy) => {
-    const accuracyData = `activity id: ${act_id}, overall accuracy: ${overallAccuracy}%`;
-    // console.log(accuracyData);
-    localStorage.setItem("activityAccuracy", accuracyData);
+    if (selectedStudent) {
+      const accuracyData = `activity id: ${act_id}, student id: ${selectedStudent.id}, score: ${overallAccuracy}%`;
+      localStorage.setItem("activityAccuracy", accuracyData);
+    } else {
+      console.log("No student selected");
+    }
   };
 
   const startRecognition = () => {
@@ -70,8 +78,10 @@ const Activity = () => {
         wordList,
         setCurrentWordIndex,
         updateResult,
-        handleRecognitionComplete
+        handleRecognitionComplete,
+        setPronunciationAccuracy
       );
+      setPronunciationAccuracy(null);
     } else {
       console.log("No Words available for recognition.");
     }
@@ -84,6 +94,19 @@ const Activity = () => {
 
   const handleSelectStudent = (student) => {
     setSelectedStudent(student);
+  };
+
+  const handleSubmitScore = () => {
+    submitScore(selectedStudent, act_id);
+  };
+
+  const handleDiscardStudent = async (student_id) => {
+    try {
+      await discardStudent(student_id, act_id);
+      setStudents(students.filter((student) => student.id !== student_id));
+    } catch (error) {
+      console.error("Error discarding student:", error);
+    }
   };
 
   return (
@@ -105,20 +128,35 @@ const Activity = () => {
                 <div
                   key={index}
                   className={`m-2 p-2 font-serif font-bold w-[28rem] text-[30px] rounded-md 
-        cursor-not-allowed shadow-sm hover:shadow-md flex flex-col lg:flex-row justify-between items-center 
-        text-center lg:text-start
-        ${index === currentWordIndex ? "bg-green-400" : "bg-gray-200"}`}
-                  style={{ wordWrap: "break-word" }} // Ensures long words wrap
-                >
-                  {word}
-                  <div className='flex lg:flex-row flex-col items-center mt-2 lg:mt-0'>
-                    {results[index] === null && <BsThreeDots />}{" "}
-                    {results[index] === true && (
-                      <FaCheck className='text-green-900' />
-                    )}
-                    {results[index] === false && (
-                      <IoMdClose className='text-red-900' />
-                    )}
+                    cursor-not-allowed shadow-sm hover:shadow-md flex flex-col justify-between items-center 
+                    text-center lg:text-start
+                    ${
+                      index === currentWordIndex
+                        ? "bg-green-400"
+                        : "bg-gray-200"
+                    }`}
+                  style={{ wordWrap: "break-word" }}>
+                  <div className='flex flex-col lg:flex-row items-center lg:justify-between w-full uppercase'>
+                    {word}
+                    <div className='flex lg:flex-row flex-col items-center mt-2 lg:mt-0'>
+                      {results[index] === null && <BsThreeDots />}
+                      {results[index] === true && (
+                        <FaCheck className='text-green-900' />
+                      )}
+                      {results[index] === false && (
+                        <IoMdClose className='text-red-900' />
+                      )}
+                    </div>
+                  </div>
+                  <div className='mt-2 bg-gray-400 w-full font-serif font-thin text-[14px]'>
+                    <div className='border-2 border-black h-full p-1 mx-6 lg:m-0'>
+                      <button
+                        onClick={() => speakWord(word)}
+                        className='w-full h-full bg-blue-900 rounded-sm p-1 text-white'
+                        disabled={pronunciationAccuracy === null}>
+                        Play
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -132,7 +170,7 @@ const Activity = () => {
                 onClick={startRecognition}
                 className='bg-green-700 m-2 p-1 rounded-sm text-white font-serif font-medium 
                 text-[18px] shadow-md hover:bg-green-600 duration-300'>
-                Play
+                Start
               </button>
               <button
                 onClick={stopRecognitionHandler}
@@ -141,15 +179,15 @@ const Activity = () => {
                 Stop
               </button>
               <Link
-                to='/dashboard'
+                to='/profile'
                 className='bg-blue-700 m-2 p-1 rounded-sm text-white font-serif font-medium 
                 text-[18px] shadow-md hover:bg-blue-600 duration-300 text-center'>
-                Home
+                Back
               </Link>
             </div>
           </div>
         </div>
-        <div className='grid grid-rows-[70%_30%]'>
+        <div className='grid grid-rows-[80%_10%]'>
           <div className='overflow-auto'>
             {loading ? (
               <p className='font-serif text-center'>Loading Students. . .</p>
@@ -157,6 +195,7 @@ const Activity = () => {
               <ActivityTable
                 students={students}
                 onSelectedStudent={handleSelectStudent}
+                onDiscardStudent={handleDiscardStudent}
               />
             )}
           </div>
@@ -171,9 +210,12 @@ const Activity = () => {
                     {selectedStudent.first_name}{" "}
                     {selectedStudent.middle_initial} {selectedStudent.last_name}
                   </div>
-                  <div className='px-4 py-2 font-serif'>
-                    <button className='bg-green-700 text-white px-3 py-1 rounded w-full'>
-                      Submit
+                  <div className='w-auto h-auto flex justify-center items-center bg-green-800 hover:bg-green-700 cursor-pointer rounded-lg'>
+                    <button
+                      className='text-white hover:text-white/50 text-[18px] rounded-md p-1 w-full'
+                      onClick={handleSubmitScore}>
+                      <GiArrowScope className='w-full' />
+                      <h3 className='font-serif'>Record</h3>
                     </button>
                   </div>
                 </div>

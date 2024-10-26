@@ -37,7 +37,7 @@ const Admin_Nav = () => {
           </li>
           <li className='my-4 py-4 border-b border-white text-white hover:border-white/10 hover:rounded  font-serif'>
             <Link to='/profile' onClick={handleClick}>
-              Profiles
+              Records
             </Link>
           </li>
           <li
@@ -63,7 +63,7 @@ const Admin_Nav = () => {
                 <Link to='/dashboard'>Dashboard</Link>
               </li>
               <li className='hover:text-white/60 transition border-b-2 border-white text-white hover:border-white/10 cursor-pointer  font-serif'>
-                <Link to='/profile'>Profile</Link>
+                <Link to='/profile'>Records</Link>
               </li>
               <li
                 className='transition px-2 flex justify-center items-center drop-shadow-lg rounded-lg border-b-2 border-white text-white hover:bg-red-600 cursor-pointer  font-serif'

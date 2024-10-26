@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -7,26 +7,22 @@ import {
   LinearScale,
   PointElement,
 } from "chart.js";
-import fetchOverallScore from "./services/fetchOverallScore";
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
-const OverallChart = () => {
-  const { chartData, error } = fetchOverallScore();
-
-  if (error) {
-    return <div>Error fetching chart data</div>;
-  }
+const IndividualGraph = ({ scoresData }) => {
+  const labels = scoresData.length ? scoresData.map((item) => item.label) : [];
+  const scores = scoresData.length ? scoresData.map((item) => item.score) : [];
 
   const data = {
-    labels: chartData.labels,
+    labels: labels,
     datasets: [
       {
-        data: chartData.scores,
+        data: scores,
         backgroundColor: "transparent",
-        borderColor: "#e32636",
-        pointBorderColor: "#e32636",
-        pointBorderWidth: 2,
+        borderColor: "maroon",
+        pointBorderColor: "transparent",
+        pointBorderWidth: 4,
         tension: 0.5,
       },
     ],
@@ -39,7 +35,7 @@ const OverallChart = () => {
     scales: {
       x: {
         grid: {
-          display: false,
+          display: true,
         },
       },
       y: {
@@ -48,16 +44,21 @@ const OverallChart = () => {
         },
         ticks: {
           stepSize: 10,
+          callback: (value) => {
+            return Math.round(value);
+          },
         },
       },
     },
   };
 
   return (
-    <div>
+    <div
+      style={{ margin: "18px", padding: "14px" }}
+      className='bg-white/50 rounded-md w-full'>
       <Line data={data} options={options}></Line>
     </div>
   );
 };
 
-export default OverallChart;
+export default IndividualGraph;

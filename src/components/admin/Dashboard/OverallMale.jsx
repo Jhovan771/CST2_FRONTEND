@@ -7,15 +7,14 @@ import {
   LinearScale,
   PointElement,
 } from "chart.js";
-import fetchOverallScore from "./services/fetchOverallScore";
-
+import fetchMaleScore from "./services/fetchMaleScore";
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
-const OverallChart = () => {
-  const { chartData, error } = fetchOverallScore();
+const OverallMale = () => {
+  const { chartData, error } = fetchMaleScore();
 
   if (error) {
-    return <div>Error fetching chart data</div>;
+    return <div>Error fetching male chart data</div>;
   }
 
   const data = {
@@ -24,8 +23,8 @@ const OverallChart = () => {
       {
         data: chartData.scores,
         backgroundColor: "transparent",
-        borderColor: "#e32636",
-        pointBorderColor: "#e32636",
+        borderColor: "#0c4374",
+        pointBorderColor: "#0c4374",
         pointBorderWidth: 2,
         tension: 0.5,
       },
@@ -60,4 +59,4 @@ const OverallChart = () => {
   );
 };
 
-export default OverallChart;
+export default OverallMale;

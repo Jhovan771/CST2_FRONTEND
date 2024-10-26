@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { fetchStudents } from "./fetchStudent";
 import AddStudent from "../../modals/addStudent";
 import NewActivity from "../../modals/newActivity";
-import { IoIosClose } from "react-icons/io";
+import { IoIosClose, IoIosArrowDropdown } from "react-icons/io";
 import { FaPlus, FaTrash } from "react-icons/fa";
 import { addStudent } from "../../../utils/Student-List/addStudent";
 import { addActivity } from "../../../utils/Student-List/addActivity";
@@ -14,6 +14,7 @@ import UpdateModal from "../../modals/updateModal";
 import UpdateContent from "./studentListModals/UpdateContent";
 import { deleteStudent } from "../../../utils/Student-List/deleteStudent";
 import ConfirmDelMod from "./studentListModals/ConfirmDelMod";
+import ConfirmDelAct from "./studentListModals/ConfirmDelAct";
 import ConfirmDelete from "../../modals/confirmModals/deleteConfirm";
 import SuccessDelete from "./studentListModals/SuccessDelete";
 import DeleteSuccess from "../../modals/ResponseModals/studentList/deleteSuccessful";
@@ -21,6 +22,10 @@ import StudentSuccess from "../../modals/ResponseModals/studentList/addStudentSu
 import AddNotify from "./studentListModals/AddNotify";
 import ActivityAdded from "../../modals/ResponseModals/studentList/activityAdded";
 import ActivityAddedCont from "./studentListModals/ActivityAddedCont";
+import { TiFolderOpen } from "react-icons/ti";
+import { deleteExercise } from "./service/student_profile_services/deleteActivity";
+import DeleteAct from "../../modals/confirmModals/deleteAct";
+
 
 const Profiles = () => {
   const [students, setStudents] = useState([]);
@@ -30,6 +35,7 @@ const Profiles = () => {
   const [openOpt, setOpenOpt] = useState(false);
   const [openUpt, setOpenUpt] = useState(false);
   const [openConDel, setOpenConDel] = useState(false);
+  const [openConDel2, setOpenConDel2] = useState(false);
   const [openSuccessDelete, setOpenSuccessDelete] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [activityLabel, setActivityLabel] = useState("");
@@ -50,6 +56,9 @@ const Profiles = () => {
   const [openActivtyAdded, setOpenActivtyAdded] = useState(false);
   const [isActivitySuccess, setIsActivitySuccess] = useState(null);
   const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownStudent, setDropdownStudent] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -191,6 +200,73 @@ const Profiles = () => {
     });
   };
 
+  //Sort ============================================= >
+  const handleSort = (type) => {
+    let sortedActivities;
+    if (type === "recent") {
+      sortedActivities = [...activities].sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+      );
+    } else if (type === "asc") {
+      sortedActivities = [...activities].sort((a, b) =>
+        a.label.localeCompare(b.label)
+      );
+    } else if (type === "desc") {
+      sortedActivities = [...activities].sort((a, b) =>
+        b.label.localeCompare(a.label)
+      );
+    }
+    setActivities(sortedActivities);
+    setDropdownOpen(false);
+  };
+
+  const handleSortStudent = (type) => {
+    let sortedStudents;
+    if (type === "first_name") {
+      sortedStudents = [...students].sort((a, b) =>
+        a.first_name.localeCompare(b.first_name)
+      );
+    } else if (type === "last_name") {
+      sortedStudents = [...students].sort((a, b) =>
+        a.last_name.localeCompare(b.last_name)
+      );
+    } else if (type === "gender") {
+      sortedStudents = [...students].sort((a, b) =>
+        a.gender.localeCompare(b.gender)
+      );
+    }
+    setStudents(sortedStudents);
+    setDropdownStudent(false);
+  };
+  //Sort ============================================= >
+
+  //DELETE ACTIVITY =====================================>
+
+  const triggerActivityDeleteConfirmation = (activity) => {
+    if (activity && activity.act_id) {
+      setActivityToDelete(activity); // Store the selected activity to be deleted
+      setOpenConDel2(true); // Open the delete confirmation modal
+    } else {
+      console.log("No Activity Selected");
+    }
+  };
+
+  const handleDeleteExercise = async () => {
+    if (activityToDelete && activityToDelete.act_id) {
+      const activityId = activityToDelete.act_id; // Get the activity ID to delete
+      try {
+        const response = await deleteExercise(activityId); // Call your deleteExercise function
+        console.log(response.message); // Log the response message
+        setOpenConDel2(false); // Close the modal
+        window.location.reload(); // Reload the page after deletion
+      } catch (error) {
+        console.error("Error deleting exercise:", error.response?.data.message);
+        alert("Error deleting activity");
+      }
+    }
+  };
+  //DELETE ACTIVITY =====================================>
+
   return (
     <div className='mt-20 mx-6 lg:flex'>
       <div className='lg:w-[20%]'>
@@ -224,52 +300,92 @@ const Profiles = () => {
             No students to display
           </div>
         ) : (
-          <table className='min-w-full table-fixed border-collapse border border-gray-300'>
-            <thead>
-              <tr className='bg-red-900'>
-                <th className='w-1/12 border border-gray-300 px-4 py-2 text-white font-serif'>
-                  #
-                </th>
-                <th className='w-4/12 border border-gray-300 px-4 py-2 text-white font-serif'>
-                  First Name
-                </th>
-                <th className='w-4/12 border border-gray-300 px-4 py-2 text-white font-serif'>
-                  Last Name
-                </th>
-                <th className='w-2/12 border border-gray-300 px-4 py-2 text-white font-serif'>
-                  Gender
-                </th>
-                <th className='w-2/12 border border-gray-300 px-4 py-2 text-white font-serif'>
-                  Options
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student, index) => (
-                <tr key={student.id}>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    {index + 1}
-                  </td>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    {student.first_name}
-                  </td>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    {student.last_name}
-                  </td>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    {student.gender}
-                  </td>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    <button
-                      className='bg-blue-800 hover:bg-blue-700 text-white px-2 py-1 rounded font-serif'
-                      onClick={() => handleSelectStudent(student)}>
-                      Options
-                    </button>
-                  </td>
+          <div>
+            <div className='flex justify-end mb-4'>
+              {/* Sort By Dropdown */}
+            </div>
+
+            <table className='min-w-full table-fixed border-collapse border border-gray-300'>
+              <thead>
+                <tr className='bg-red-900'>
+                  <th className='w-1/12 border border-gray-300 px-4 py-2 text-white font-serif'>
+                    #
+                  </th>
+                  <th className='w-4/12 border border-gray-300 px-4 py-2 text-white font-serif'>
+                    First Name
+                  </th>
+                  <th className='w-4/12 border border-gray-300 px-4 py-2 text-white font-serif'>
+                    Last Name
+                  </th>
+                  <th className='w-2/12 border border-gray-300 px-4 py-2 text-white font-serif'>
+                    Gender
+                  </th>
+                  <th className='w-2/12 border border-gray-300 px-4 py-2 text-white font-serif'>
+                    <div className='relative inline-block'>
+                      <button
+                        className='bg-red-900 text-white px-4 py-2 rounded flex items-center'
+                        onClick={() => setDropdownStudent(!dropdownStudent)}>
+                        Sort
+                        <IoIosArrowDropdown className='text-[22px] ml-2' />
+                      </button>
+                      {dropdownStudent && (
+                        <div className='absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-10'>
+                          <ul>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSortStudent("first_name")}>
+                                First Name
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSortStudent("last_name")}>
+                                Last Name
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSortStudent("gender")}>
+                                Gender
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {students.map((student, index) => (
+                  <tr key={student.id}>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      {index + 1}
+                    </td>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      {student.first_name}
+                    </td>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      {student.last_name}
+                    </td>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      {student.gender}
+                    </td>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      <button
+                        className='bg-blue-800 hover:bg-blue-700 text-white px-2 py-1 rounded font-serif'
+                        onClick={() => handleSelectStudent(student)}>
+                        Options
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -435,7 +551,7 @@ const Profiles = () => {
       </NewActivity>
 
       <ViewAct open={viewAct} onClose={() => setViewAct(false)}>
-        <div>
+        <div className='flex flex-col h-[500px]'>
           <div className='flex items-center justify-between border-b-2'>
             <h2></h2>
             <IoIosClose
@@ -443,42 +559,89 @@ const Profiles = () => {
               onClick={() => setViewAct(false)}
             />
           </div>
-          <table className='min-w-96 table-fixed border-collapse border border-gray-300'>
-            <thead>
-              <tr className='bg-red-900'>
-                <th className='w-[20%] border border-gray-300 px-4 py-2 text-white font-serif'>
-                  #
-                </th>
-                <th className='w-[40%] border border-gray-300 px-4 py-2 text-white font-serif'>
-                  Label
-                </th>
-                <th className='w-[40%] border border-gray-300 px-4 py-2 text-white font-serif'>
-                  Options
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activities.map((activity, index) => (
-                <tr key={activity.id}>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    {index + 1}
-                  </td>
-                  <td
-                    style={{ wordWrap: "break-word", maxWidth: "250px" }}
-                    className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif break-words whitespace-normal'>
-                    {activity.label}
-                  </td>
-                  <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
-                    <button
-                      onClick={() => handleViewActivity(activity)}
-                      className='bg-blue-800 hover:bg-blue-700 text-white px-2 py-1 rounded font-serif'>
-                      View
-                    </button>
-                  </td>
+          <div className='w-auto h-full overflow-y-auto'>
+            <table className='min-w-96 border-collapse border border-gray-300'>
+              <thead className='sticky top-0'>
+                <tr className='bg-red-900'>
+                  <th className='w-[20%] border border-gray-300 px-4 py-2 text-white font-serif'>
+                    #
+                  </th>
+                  <th className='w-[40%] border border-gray-300 px-4 py-2 text-white font-serif'>
+                    Label
+                  </th>
+                  <th className='w-[40%] border border-gray-300 px-4 py-2 text-whitefont-serif'>
+                    <div className='relative inline-block'>
+                      <button
+                        className='text-white px-4 py-2 rounded flex justify-center items-center   hover:text-white/60 '
+                        onClick={() => setDropdownOpen(!dropdownOpen)}>
+                        Sort by
+                        <IoIosArrowDropdown className='text-[20px] ml-2' />
+                      </button>
+                      {dropdownOpen && (
+                        <div className='absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-10'>
+                          <ul>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSort("recent")}>
+                                Recently Added
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSort("asc")}>
+                                Alphabetically
+                              </button>
+                            </li>
+                            <li>
+                              <button
+                                className='block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100'
+                                onClick={() => handleSort("desc")}>
+                                Z - A
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {activities.map((activity, index) => (
+                  <tr key={activity.id}>
+                    <td className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      {index + 1}
+                    </td>
+                    <td
+                      style={{ wordWrap: "break-word", maxWidth: "250px" }}
+                      className='border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif break-words whitespace-normal'>
+                      {activity.label}
+                    </td>
+                    <td className='flex border border-gray-300 px-4 py-2 text-center bg-gray-200 font-serif'>
+                      <button
+                        onClick={() => handleViewActivity(activity)}
+                        className='text-blue-800 hover:text-blue-700 text-[18px] px-2 py-1 rounded font-serif mx-1 text-center'>
+                        <TiFolderOpen className='w-full' />
+                        <h3 className='font-serif hover:text-blue-700'>View</h3>
+                      </button>
+                      <button
+                        onClick={() =>
+                          triggerActivityDeleteConfirmation(activity)
+                        }
+                        className='text-red-800 hover:text-red-700 text-[18px] px-2 py-1 rounded font-serif mx-1 text-center'>
+                        <FaTrash className='w-full' />
+                        <h3 className='font-serif hover:text-red-700'>
+                          Delete
+                        </h3>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </ViewAct>
 
@@ -525,6 +688,15 @@ const Profiles = () => {
             onConfirm={handleDelete}
           />
         </ConfirmDelete>
+      )}
+
+      {openConDel2 && (
+        <DeleteAct open={openConDel2} onClose={() => setOpenConDel2(false)}>
+          <ConfirmDelAct
+            onClose={() => setOpenConDel2(false)}
+            onConfirm={handleDeleteExercise}
+          />
+        </DeleteAct>
       )}
 
       <DeleteSuccess
