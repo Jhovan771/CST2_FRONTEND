@@ -7,11 +7,14 @@ import { CiMenuFries } from "react-icons/ci";
 import LogModal from "../modals/LogModal";
 import { useLogin } from "./useLogin";
 import { useAuth } from "../context/AuthContext";
+import Register from "../modals/newAccount";
+import Account from "./mod/Account";
 
 const Navbar2 = () => {
   const [click, setClick] = useState(false);
   const handleClick = () => setClick(!click);
   const [open, setOpen] = useState(false);
+  const [openAccountRegister, setOpenAccountRegister] = useState(false);
 
   const {
     username,
@@ -54,6 +57,7 @@ const Navbar2 = () => {
           <li
             className='transition px-2 flex justify-center items-center drop-shadow-lg rounded-lg border-b-2 border-blue-800 hover:bg-blue-600 cursor-pointer font-serif'
             onClick={() => setOpen(true)}>
+            <h3>Login</h3>
             <FaUserCircle />
           </li>
         </ul>
@@ -96,9 +100,9 @@ const Navbar2 = () => {
                 </li>
               ) : (
                 <li
-                  className='transition px-2 flex justify-center items-center drop-shadow-lg rounded-lg border-b-2 border-blue-800 hover:bg-blue-600 cursor-pointer font-serif'
+                  className='hover:text-[#9c0c07] transition border-b-2 border-blue-800 hover:border-[#9c0c07] cursor-pointer font-serif'
                   onClick={() => setOpen(true)}>
-                  <FaUserCircle />
+                  <h3>Login</h3>
                 </li>
               )}
             </ul>
@@ -151,9 +155,25 @@ const Navbar2 = () => {
                   Sign In
                 </button>
               </div>
+              <div className='font-serif w-full mt-4'>
+                <p className='flex justify-between '>
+                  Dont have a account?{" "}
+                  <span className='text-blue-800 hover:text-blue-700'>
+                    <button onClick={() => setOpenAccountRegister(true)}>
+                      Register Now
+                    </button>
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
         </LogModal>
+
+        <Register
+          open={openAccountRegister}
+          onClose={() => setOpenAccountRegister(false)}>
+          <Account onClose={() => setOpenAccountRegister(false)} />
+        </Register>
       </div>
     </nav>
   );

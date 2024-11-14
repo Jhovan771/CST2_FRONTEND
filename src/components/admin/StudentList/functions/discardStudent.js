@@ -14,10 +14,15 @@ export const discardStudent = async (student_id, activity_id) => {
 
     const result = await response.json();
     if (response.ok) {
-      console.log("Student discarded successfully:", result);
       return result;
     } else {
       console.error("Failed to discard student:", result.message);
+      console.log(
+        "Discarding student with ID:",
+        student_id,
+        "for activity ID:",
+        activity_id
+      );
     }
   } catch (error) {
     console.error("Error discarding student:", error);

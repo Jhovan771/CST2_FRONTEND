@@ -15,6 +15,8 @@ import { submitScore } from "./functions/submitScore";
 import { discardStudent } from "./functions/discardStudent";
 import { GiArrowScope } from "react-icons/gi";
 import { speakWord } from "./functions/speechSynthesis";
+import DiscardConfirm from "../../modals/confirmModals/discardConfirm";
+import ConfrimDiscard from "./studentListModals/ConfrimDiscard";
 
 const Activity = () => {
   const location = useLocation();
@@ -32,6 +34,12 @@ const Activity = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [pronunciationAccuracy, setPronunciationAccuracy] = useState(null);
+  const [attempt, setAttempt] = useState(1);
+  const [scores, setScores] = useState([null, null]);
+  const [openConfrimDiscard, setOpenConfrimDiscard] = useState(false);
+  const [studentToDiscard, setStudentToDiscard] = useState({
+    student_id: null,
+  });
 
   // FETCH STUDENTS WITHOUT SCORES
   useEffect(() => {
@@ -63,9 +71,26 @@ const Activity = () => {
   };
 
   const handleRecognitionComplete = (overallAccuracy) => {
+    // console.log("handleRecognitionComplete called");
+    // console.log(`Current attempt: ${attempt}`);
+
     if (selectedStudent) {
       const accuracyData = `activity id: ${act_id}, student id: ${selectedStudent.id}, score: ${overallAccuracy}%`;
       localStorage.setItem("activityAccuracy", accuracyData);
+
+      setScores((prevScores) => {
+        const newScores = [...prevScores];
+        newScores[attempt - 1] = overallAccuracy;
+        return newScores;
+      });
+
+      if (attempt < 2) {
+        handleAttempt();
+      }
+
+      if (attempt === 2) {
+        handleSubmitScore();
+      }
     } else {
       console.log("No student selected");
     }
@@ -87,6 +112,19 @@ const Activity = () => {
     }
   };
 
+  const handleAttempt = () => {
+    setAttempt((prevAttempt) => {
+      if (prevAttempt < 2) {
+        const newAttempt = prevAttempt + 1;
+        console.log(`Attempt updated to: ${newAttempt}`);
+        return newAttempt;
+      } else {
+        console.log("Maximum attempts reached.");
+        return prevAttempt;
+      }
+    });
+  };
+
   const stopRecognitionHandler = () => {
     stopRecognition();
     setCurrentWordIndex(-1);
@@ -97,15 +135,37 @@ const Activity = () => {
   };
 
   const handleSubmitScore = () => {
-    submitScore(selectedStudent, act_id);
+    console.log("Submitting score...");
+    submitScore(selectedStudent, act_id)
+      .then(() => {
+        console.log("Score submitted successfully");
+      })
+      .catch((error) => {
+        console.error("Error submitting score:", error);
+      });
   };
 
-  const handleDiscardStudent = async (student_id) => {
-    try {
-      await discardStudent(student_id, act_id);
-      setStudents(students.filter((student) => student.id !== student_id));
-    } catch (error) {
-      console.error("Error discarding student:", error);
+  const handleOpenDiscardModal = (student) => {
+    setStudentToDiscard({ student_id: student.id });
+    setOpenConfrimDiscard(true);
+  };
+
+  const handleConfirmDiscard = async () => {
+    if (studentToDiscard && studentToDiscard.student_id !== null) {
+      try {
+        await discardStudent(studentToDiscard.student_id, act_id);
+        setStudents(
+          students.filter(
+            (student) => student.id !== studentToDiscard.student_id
+          )
+        );
+        setStudentToDiscard({ student_id: null });
+        setOpenConfrimDiscard(false);
+      } catch (error) {
+        console.error("Error discarding student:", error);
+      }
+    } else {
+      console.error("studentToDiscard does not have a valid student_id.");
     }
   };
 
@@ -195,25 +255,41 @@ const Activity = () => {
               <ActivityTable
                 students={students}
                 onSelectedStudent={handleSelectStudent}
-                onDiscardStudent={handleDiscardStudent}
+                onDiscardStudent={handleOpenDiscardModal}
               />
             )}
           </div>
           <div className='m-2'>
             <div className='bg-white'>
               {selectedStudent ? (
-                <div className='grid grid-cols-[5%_70%_25%] items-center border border-gray-300 px-4 py-2'>
+                <div className='grid grid-cols-5 items-center border border-gray-300 px-4 py-2'>
                   <div className='text-center border-r-2'>
-                    <IoMicCircle className='text-[44px] text-red-900 border-r-2' />
+                    <IoMicCircle className='text-[44px] text-center text-red-900 border-r-2' />
                   </div>
-                  <div className='px-4 py-2 font-serif font-bold text-[18px] border-r-2 border-black text-center'>
-                    {selectedStudent.first_name}{" "}
-                    {selectedStudent.middle_initial} {selectedStudent.last_name}
+                  <div className='px-4 py-2 font-serif font-bold text-[18px] text-center'>
+                    {selectedStudent.first_name} {selectedStudent.last_name}
+                    <h3 className='text-[10px] text-red-900 text-center'>
+                      {selectedStudent.gender}
+                    </h3>
+                  </div>
+                  <div className='font-serif font-bold text-center p-2'>
+                    <h2>First Attempt</h2>
+                    <h2 className='text-red-900'>
+                      {scores[0] !== null ? `${scores[0]}%` : "-"}
+                    </h2>
+                  </div>
+                  <div className='font-serif font-bold text-center p-2'>
+                    <h2>Second Attempt</h2>
+                    <h2 className='text-red-900'>
+                      {scores[1] !== null ? `${scores[1]}%` : "-"}
+                    </h2>
                   </div>
                   <div className='w-auto h-auto flex justify-center items-center bg-green-800 hover:bg-green-700 cursor-pointer rounded-lg'>
                     <button
                       className='text-white hover:text-white/50 text-[18px] rounded-md p-1 w-full'
-                      onClick={handleSubmitScore}>
+                      onClick={() => {
+                        handleSubmitScore();
+                      }}>
                       <GiArrowScope className='w-full' />
                       <h3 className='font-serif'>Record</h3>
                     </button>
@@ -226,6 +302,17 @@ const Activity = () => {
           </div>
         </div>
       </div>
+
+      {openConfrimDiscard && (
+        <DiscardConfirm
+          open={openConfrimDiscard}
+          onClose={() => setOpenConfrimDiscard(false)}>
+          <ConfrimDiscard
+            onClose={() => setOpenConfrimDiscard(false)}
+            onConfirm={handleConfirmDiscard}
+          />
+        </DiscardConfirm>
+      )}
     </div>
   );
 };

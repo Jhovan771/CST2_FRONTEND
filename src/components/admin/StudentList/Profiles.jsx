@@ -26,7 +26,6 @@ import { TiFolderOpen } from "react-icons/ti";
 import { deleteExercise } from "./service/student_profile_services/deleteActivity";
 import DeleteAct from "../../modals/confirmModals/deleteAct";
 
-
 const Profiles = () => {
   const [students, setStudents] = useState([]);
   const [open, setOpen] = useState(false);
@@ -205,7 +204,7 @@ const Profiles = () => {
     let sortedActivities;
     if (type === "recent") {
       sortedActivities = [...activities].sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
     } else if (type === "asc") {
       sortedActivities = [...activities].sort((a, b) =>
@@ -253,12 +252,12 @@ const Profiles = () => {
 
   const handleDeleteExercise = async () => {
     if (activityToDelete && activityToDelete.act_id) {
-      const activityId = activityToDelete.act_id; // Get the activity ID to delete
+      const activityId = activityToDelete.act_id;
       try {
-        const response = await deleteExercise(activityId); // Call your deleteExercise function
-        console.log(response.message); // Log the response message
-        setOpenConDel2(false); // Close the modal
-        window.location.reload(); // Reload the page after deletion
+        const response = await deleteExercise(activityId);
+        console.log(response.message);
+        setOpenConDel2(false);
+        window.location.reload();
       } catch (error) {
         console.error("Error deleting exercise:", error.response?.data.message);
         alert("Error deleting activity");

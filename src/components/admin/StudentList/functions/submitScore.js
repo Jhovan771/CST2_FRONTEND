@@ -1,12 +1,10 @@
 export const submitScore = async (selectedStudent, act_id) => {
   if (!selectedStudent) {
     console.log("No student selected");
-    return;
+    return Promise.reject("No student selected");
   }
 
   const overallAccuracy = localStorage.getItem("activityAccuracy");
-  //   console.log("Overall Accuracy Value:", overallAccuracy);
-
   const score = overallAccuracy
     ? parseInt(
         overallAccuracy
@@ -18,16 +16,12 @@ export const submitScore = async (selectedStudent, act_id) => {
       )
     : 0;
 
-  //   console.log("Parsed Score:", score);
-
   const data = {
     id: selectedStudent.id,
     activity_id: act_id,
     score: score,
     completed: 1,
   };
-
-  //   console.log("Data being sent:", data);
 
   try {
     const response = await fetch(
@@ -49,8 +43,10 @@ export const submitScore = async (selectedStudent, act_id) => {
       window.location.reload();
     } else {
       console.error("Failed to submit score:", result.message);
+      return Promise.reject(result.message);
     }
   } catch (error) {
     console.error("Error submitting score:", error);
+    return Promise.reject(error);
   }
 };

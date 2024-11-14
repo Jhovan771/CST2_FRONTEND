@@ -42,10 +42,10 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
     const storedData =
       JSON.parse(localStorage.getItem("pronunciationData")) || [];
 
-    console.log("Stored Data:", storedData); // Debugging line
+    console.log("Stored Data:", storedData);
 
     if (storedData.length > 0) {
-      const labels = storedData.map((entry, index) => `Attempt ${index + 1}`);
+      const labels = storedData.map((entry) => entry.word);
       const accuracyData = storedData.map((entry) => entry.accuracy);
 
       setChartData({
@@ -69,7 +69,6 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
   };
 
   useEffect(() => {
-    // Event listener for changes to localStorage
     const handleStorageChange = (event) => {
       if (event.key === "pronunciationData") {
         updateChartData();
@@ -78,10 +77,8 @@ const BoxII = ({ triggerUpdate, resetChartData }) => {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Initial update on component mount
     updateChartData();
 
-    // Cleanup the event listener
     return () => {
       window.removeEventListener("storage", handleStorageChange);
     };
